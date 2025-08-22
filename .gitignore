@@ -1,0 +1,72 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+*.nuspec
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Dotnet tools
+.dotnet-tools.json
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# StyleCop
+StyleCopReport.xml
+
+# Coverage
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+coverage*.lcov
+
+# Logs
+*.log
+*.tlog
+
+# Others
+_ReSharper*/
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.tmp
+*.temp
+*.bak
+*.swp
+*~ 
+
+# OS-specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Aspire (if using .NET Aspire)
+aspire-manifest/
+
+# Docker / container files
+docker-compose.override.yml
+*.pid
