@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using YtdlpDotNet;
 using ILogger = YtdlpDotNet.ILogger;
 
-namespace Mp3Tagger.Logging;
+namespace Mp3Tagger.Core.Logging;
 
 internal sealed class YtdlpLogger : ILogger
 {

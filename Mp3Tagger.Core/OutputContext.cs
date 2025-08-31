@@ -1,6 +1,6 @@
-namespace Mp3Tagger;
+namespace Mp3Tagger.Core;
 
-public class OutputContext
+public sealed class OutputContext
 {
     public required DirectoryInfo OutputFolder { get; init; }
     public required FileInfo Mp3File { get; init; }

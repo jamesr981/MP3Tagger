@@ -1,0 +1,19 @@
+﻿services:
+  webapplication1:
+    image: webapplication1
+    build:
+      context: .
+      dockerfile: WebApplication1/Dockerfile
+
+  mp3tagger.web:
+    image: mp3tagger.web
+    build:
+      context: .
+      dockerfile: Mp3Tagger.Web/Dockerfile
+
+  mp3tagger.web-1:
+    image: mp3tagger.web-1
+    build:
+      context: .
+      dockerfile: Mp3Tagger.Web/Dockerfile
+
