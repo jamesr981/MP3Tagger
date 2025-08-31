@@ -1,54 +1,54 @@
-﻿using Id3;
-using Id3.Frames;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Mp3Tagger;
+using Mp3Tagger.Logging;
+using Mp3Tagger.Steps;
+using YoutubeExplode;
+using YtdlpDotNet;
+using ILogger = YtdlpDotNet.ILogger;
 
-const string musicDirectory = @"C:\temp\Music";
-
-var mp3Files = Directory.GetFiles(musicDirectory, "*.mp3", SearchOption.AllDirectories);
-
-foreach (var mp3File in mp3Files)
-{
-    CreateTagForFile(mp3File);
-}
-
-return;
-
-void CreateTagForFile(string mp3Path)
-{
-    using var mp3 = new Mp3(mp3Path, Mp3Permissions.ReadWrite);
-    var tagToCreate = CreateTag(mp3Path);
-    mp3.WriteTag(tagToCreate);
-}
-
-Id3Tag CreateTag(string filePath)
-{
-    var title = Path.GetFileNameWithoutExtension(filePath);
-    var artistFrame = new ArtistsFrame();
-    var artist = GetArtistFromFile(filePath);
-    if (artist is not null)
+using var host = Host.CreateDefaultBuilder(args)
+    .ConfigureServices((context, services) =>
     {
-        artistFrame.Value.Add(artist);
-    }
+        services.AddTransient<App>();
+        services.AddTransient<Mp3Download>();
+        services.AddTransient<CoverDownload>();
+        services.AddHttpClient<CoverDownload>("Youtube");
+        services.AddTransient<YoutubeClient>(z =>
+        {
+            var httpClientFactory = z.GetRequiredService<IHttpClientFactory>();
+            var httpClient = httpClientFactory.CreateClient("Youtube");
+            return new YoutubeClient(httpClient);
+        });
+        services.AddTransient<ILogger, YtdlpLogger>();
+        services.AddTransient<Ytdlp>(z =>
+        {
+            var logger = z.GetRequiredService<ILogger>();
+            var options = z.GetRequiredService<IOptions<Arguments>>().Value;
+            return new Ytdlp(options.YtdlpLocation, logger);
+        });
+        
+        services.AddTransient<Mp3Tagger.Steps.Mp3Tagger>();
+        services.AddTransient<Cleanup>();
+        
+        services.AddOptions<Arguments>().Bind(context.Configuration).ValidateDataAnnotations().ValidateOnStart()
+            .PostConfigure<ILogger<Program>>(
+                (z,logger ) => 
+                {
+                    if (!Directory.Exists(z.OutputPath))
+                    {
+                        logger.LogInformation("Creating output directory: {OutputPath}", z.OutputPath);
+                        Directory.CreateDirectory(z.OutputPath);
+                    }
+                });
+    })
+    .Build();
 
-    var tag = new Id3Tag
-    {
-        Title = title,
-        Album = title,
-        Artists = artistFrame,
-    };
+var app = host.Services.GetRequiredService<App>();
+var cancellationTokenSource = new CancellationTokenSource();
 
-    return tag.ConvertTo(Id3Version.V23);
-}
+Console.CancelKeyPress += (_, _) => cancellationTokenSource.Cancel();
 
-string? GetArtistFromFile(string mp3Path)
-{
-    var directory = Path.GetDirectoryName(mp3Path);
-    if (directory is null) return null;
-    var artistFilePath = Path.Combine(directory, "artist.txt");
-    if (!File.Exists(artistFilePath)) return null;
-    
-    using var stream = File.OpenRead(artistFilePath);
-    using var streamReader = new StreamReader(stream);
-    var artist = streamReader.ReadLine();
-    return artist;
-}
-
+await app.Run(cancellationTokenSource.Token);

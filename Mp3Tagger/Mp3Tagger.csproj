@@ -8,7 +8,14 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="FFmpeg.Win64.Static" Version="4.1.1.1" />
       <PackageReference Include="ID3" Version="0.6.0" />
+      <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.8" />
+      <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.8" />
+      <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="9.0.8" />
+      <PackageReference Include="YoutubeExplode" Version="6.5.4" />
+      <PackageReference Include="ytdlp-executable" Version="2025.8.11" />
+      <PackageReference Include="Ytdlp.NET" Version="1.2.3" />
     </ItemGroup>
 
 </Project>
