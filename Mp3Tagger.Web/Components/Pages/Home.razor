@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using JetBrains.Annotations
 @using Mp3Tagger.Core
 
 @inject ILogger<Home> Logger
@@ -55,8 +56,9 @@
     private IEnumerable<string>? Errors { get; set; }
     private CancellationTokenSource? _submitCts;
 
-    protected override void OnInitialized() => Model ??= new();
+    protected override void OnInitialized() => Model ??= new Download();
 
+    [UsedImplicitly]
     private async Task Submit()
     {
         Errors = null;
@@ -70,7 +72,7 @@
         
         var result = Model!.Validate();
         var isValid = false;
-        result.Switch(success => { isValid = true; }, error => { Errors = error.Value; });
+        result.Switch(_ => { isValid = true; }, error => { Errors = error.Value; });
 
         if (!isValid) return;
         
