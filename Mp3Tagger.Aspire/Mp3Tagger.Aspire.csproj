@@ -12,6 +12,7 @@
 
     <ItemGroup>
         <PackageReference Include="Aspire.Hosting.AppHost" Version="9.4.1"/>
+        <PackageReference Include="Aspire.Hosting.Seq" Version="9.4.1" />
         <PackageReference Include="FFmpeg.Static" Version="4.4.0.7" />
         <PackageReference Include="ytdlp-executable" Version="2025.8.11" />
     </ItemGroup>

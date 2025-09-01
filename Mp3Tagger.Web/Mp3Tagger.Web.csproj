@@ -17,4 +17,8 @@
       <ProjectReference Include="..\Mp3Tagger.Core\Mp3Tagger.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Seq.Extensions.Logging" Version="8.0.0" />
+    </ItemGroup>
+
 </Project>

@@ -10,7 +10,6 @@ internal sealed class Mp3Download : IMp3Downloader
     private readonly ILogger<Mp3Download> _logger;
     private readonly Ytdlp _ytdlp;
     private const string ExtensionTemplate = ".%(ext)s";
-    private const string AudioOnly = "audio only";
 
     public Mp3Download(IOptions<Arguments> args, ILogger<Mp3Download> logger, Ytdlp ytdlp)
     {
@@ -25,20 +24,19 @@ internal sealed class Mp3Download : IMp3Downloader
         var outputTemplate = GetOutputTemplate(download);
         try
         {
-            var formats = await _ytdlp.GetAvailableFormatsAsync(download.Mp3Url, cancellationToken);
-            var audioFormat = formats.FirstOrDefault(z => z.Resolution == AudioOnly);
-            if (audioFormat is null)
-            {
-                _logger.LogInformation("No audio format available.");
-                return;
-            }
-
+            _logger.LogWarning("Output folder: {OutputFolder}", outputContext.OutputFolder.FullName);
             _ytdlp.ExtractAudio("mp3")
-                .AddCustomCommand($"--ffmpeg-location {_args.FfmpegLocation}")
-                .SetFormat(audioFormat.ID)
+                .AddCustomCommand("--force-ipv4")
+                .SetFormat("bestaudio")
                 .EmbedMetadata()
+                .SetReferer(download.Mp3Url)
                 .SetOutputFolder(outputContext.OutputFolder.FullName)
                 .SetOutputTemplate(outputTemplate);
+
+            if (!string.IsNullOrWhiteSpace(_args.FfmpegLocation))
+            {
+                _ytdlp.AddCustomCommand($"--ffmpeg-location {_args.FfmpegLocation}");
+            }
             
             await _ytdlp.ExecuteAsync(download.Mp3Url, cancellationToken);
         }

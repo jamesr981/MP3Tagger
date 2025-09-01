@@ -1,19 +1,28 @@
 ﻿services:
-  webapplication1:
-    image: webapplication1
-    build:
-      context: .
-      dockerfile: WebApplication1/Dockerfile
+  seq:
+    image: datalust/seq:latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_NOAUTHENTICATION=true
+    ports:
+      - "8082:80"    # Seq UI
+      - "5341:5341"  # Ingestion API
+    volumes:
+      - seq-data:/data
 
   mp3tagger.web:
     image: mp3tagger.web
     build:
       context: .
       dockerfile: Mp3Tagger.Web/Dockerfile
+    depends_on:
+      - seq
+    environment:
+      - ConnectionStrings__Seq=http://seq:5341
+    ports:
+      - "8080:8080"
+    volumes:
+      - C:\temp\Mp3Tagger:/Downloads
 
-  mp3tagger.web-1:
-    image: mp3tagger.web-1
-    build:
-      context: .
-      dockerfile: Mp3Tagger.Web/Dockerfile
-
+volumes:
+  seq-data:

@@ -15,13 +15,31 @@
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.8" />
       <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.8" />
       <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="9.0.8" />
+      <PackageReference Include="Soenneker.Libraries.ffprobe" Version="3.0.643" />
       <PackageReference Include="YoutubeExplode" Version="6.5.4" />
       <PackageReference Include="ytdlp-executable" Version="2025.8.11" />
-      <PackageReference Include="Ytdlp.NET" Version="1.2.3" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Mp3Tagger.Core\Mp3Tagger.Core.csproj" />
     </ItemGroup>
+
+    <Target Name="RelocateFfprobe" AfterTargets="Build">
+        <MakeDir Directories="$(OutDir)Tools" />
+
+        <!-- Move exe from resources to Tools -->
+        <Move
+                SourceFiles="$(OutDir)Resources\ffprobe.exe"
+                DestinationFiles="$(OutDir)Tools\ffprobe.exe"
+                Condition="Exists('$(OutDir)Resources\ffprobe.exe')" />
+        <RemoveDir Directories="$(OutDir)Resources"/>
+
+        <Move
+                SourceFiles="$(OutDir)ffmpeg\ffmpeg.exe"
+                DestinationFiles="$(OutDir)Tools\ffmpeg.exe"
+                Condition="Exists('$(OutDir)ffmpeg\ffmpeg.exe')" />
+        <RemoveDir Directories="$(OutDir)ffmpeg"/>
+    </Target>
+
 
 </Project>

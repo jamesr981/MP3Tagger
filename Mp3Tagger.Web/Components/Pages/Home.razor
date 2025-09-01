@@ -18,7 +18,7 @@
 }
 
 <form method="post" @onsubmit="Submit" @formname="music-form">
-    <AntiforgeryToken />
+
     <div>
         <label>
             Song Title: 
@@ -87,6 +87,5 @@
             Logger.LogError(ex, "Download failed.");
         }
     }
-    
 }
 

@@ -9,6 +9,6 @@ public sealed class Arguments
     public string OutputPath { get; init; } =
         Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "Downloads");
 
-    public string YtdlpLocation { get; init; } = @"Tools\yt-dlp.exe";
-    public string FfmpegLocation { get; init; } = @"ffmpeg\ffmpeg.exe";
+    public string YtdlpLocation { get; init; } = "yt-dlp";
+    public string? FfmpegLocation { get; init; }
 }
