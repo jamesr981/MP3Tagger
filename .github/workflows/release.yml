@@ -12,7 +12,7 @@ permissions:
 env:
   # Set this repository variable in GitHub: Settings -> Secrets and variables -> Actions -> Variables
   # Example value: your-dockerhub-username/mp3tagger
-  DOCKERHUB_REPO: ${{ vars.DOCKERHUB_REPO }}
+  DOCKERHUB_REPO: ${{ secrets.DOCKERHUB_REPO }}
 
 jobs:
   docker-release:
