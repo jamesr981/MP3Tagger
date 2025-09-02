@@ -1,3 +1,9 @@
 ﻿<Solution>
-  <Project Path="Mp3Tagger\Mp3Tagger.csproj" Type="Classic C#" />
+  <Folder Name="/Solution Items/">
+    <File Path="compose.yaml" />
+  </Folder>
+  <Project Path="Mp3Tagger.Aspire\Mp3Tagger.Aspire.csproj" Type="Classic C#" />
+  <Project Path="Mp3Tagger.Core\Mp3Tagger.Core.csproj" Type="Classic C#" />
+  <Project Path="Mp3Tagger.Web\Mp3Tagger.Web.csproj" Type="Classic C#" />
+  <Project Path="Mp3Tagger.Console\Mp3Tagger.Console.csproj" Type="Classic C#" />
 </Solution>

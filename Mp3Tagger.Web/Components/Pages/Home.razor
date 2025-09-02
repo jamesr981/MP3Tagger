@@ -1,0 +1,93 @@
+﻿@page "/"
+@using JetBrains.Annotations
+@using Mp3Tagger.Core
+
+@inject ILogger<Home> Logger
+@inject MusicDownloader MusicDownloader
+
+@if (Errors?.Any() == true)
+{
+    <div class="alert alert-danger" role="alert">
+        <strong>There were problems with your submission:</strong>
+        <ul>
+            @foreach (var e in Errors)
+            {
+                <li>@e</li>
+            }
+        </ul>
+    </div>
+}
+
+<form method="post" @onsubmit="Submit" @formname="music-form">
+    <AntiforgeryToken/>
+    <div>
+        <label>
+            Song Title: 
+            <InputText @bind-Value="Model!.SongTitle" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Song Url: 
+            <InputText @bind-Value="Model!.Mp3Url" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Cover Url: 
+            <InputText @bind-Value="Model!.CoverUrl" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Artist: 
+            <InputText @bind-Value="Model!.Artist" />
+        </label>
+    </div>
+    <div>
+        <button type="submit">Submit</button>
+    </div>
+</form>
+
+@code {
+    [SupplyParameterFromForm]
+    private Download? Model { get; set; }
+    
+    private IEnumerable<string>? Errors { get; set; }
+    private CancellationTokenSource? _submitCts;
+
+    protected override void OnInitialized() => Model ??= new Download();
+
+    [UsedImplicitly]
+    private async Task Submit()
+    {
+        Errors = null;
+        if (_submitCts is not null)
+        {
+            await _submitCts.CancelAsync();
+            _submitCts?.Dispose();
+        }
+        
+        _submitCts = new CancellationTokenSource();
+        
+        var result = Model!.Validate();
+        var isValid = false;
+        result.Switch(_ => { isValid = true; }, error => { Errors = error.Value; });
+
+        if (!isValid) return;
+        
+        try
+        {
+            await MusicDownloader.Download(Model, _submitCts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Errors = ["An unexpected error occurred while downloading. Please try again."];
+            Logger.LogError(ex, "Download failed.");
+        }
+    }
+}
+
