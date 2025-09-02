@@ -9,7 +9,11 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddLogging(z =>
 {
-    z.AddSeq(builder.Configuration.GetConnectionString("seq"));
+    var seqConnectionString = builder.Configuration.GetConnectionString("Seq");
+    if (!string.IsNullOrWhiteSpace(seqConnectionString))
+    {
+        z.AddSeq(seqConnectionString);
+    }
 });
 builder.Services.AddMp3Tagger(builder.Configuration);
 

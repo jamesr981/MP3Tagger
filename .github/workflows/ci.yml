@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+    branches: ["**"]
+  push:
+    branches: ["master"]
+    tags: ["*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and Test (.NET)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate tag format (X.Y.Z)
+        if: ${{ github.ref_type == 'tag' }}
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "ERROR: Invalid tag '$TAG'. Tags must follow the format X.Y.Z (e.g., 1.2.3)." >&2
+            exit 1
+          fi
+
+      - name: Setup .NET 9.x
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore Mp3Tagger.sln
+
+      - name: Build
+        run: dotnet build Mp3Tagger.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test Mp3Tagger.sln --configuration Release --no-build --verbosity normal
+
+       - name: Build Docker image (no push)
+         uses: docker/build-push-action@v6
+         with:
+           context: .
+           file: Mp3Tagger.Web/Dockerfile
+           push: false

@@ -22,7 +22,8 @@
     ports:
       - "8080:8080"
     volumes:
-      - C:\temp\Mp3Tagger:/Downloads
+      - mp3tagger-downloads:/Downloads
 
 volumes:
   seq-data:
+  mp3tagger-downloads:
