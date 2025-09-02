@@ -61,4 +61,4 @@ jobs:
             -X POST \
             repos/${{ github.repository }}/actions/workflows/release.yml/dispatches \
             -f ref='${{ github.ref }}' \
-            -f inputs.tag="$TAG"
+            -f inputs[tag]="$TAG"
