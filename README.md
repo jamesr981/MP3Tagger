@@ -150,7 +150,7 @@ Make sure the mapped host directory is writable by Docker. The application creat
 
 ## Releases and tags
 
-The GitHub Actions pipeline builds and pushes the Docker image when a tag is pushed. Tags must follow the format `X.Y.Z` (e.g., `1.2.3`). The Docker image tag matches the Git tag.
+The GitHub Actions pipeline builds and pushes the Docker image when a tag is pushed (via CI -> Release). Tags must follow the format `X.Y.Z` (e.g., `1.2.3`). The Docker image is tagged with both the version (e.g., `1.2.3`) and `latest`.
 
 Configure these in your GitHub repository to enable pushing to Docker Hub:
 - Variable: `DOCKERHUB_REPO` (e.g., `youruser/mp3tagger`)

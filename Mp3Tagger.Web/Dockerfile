@@ -9,6 +9,9 @@ RUN apt-get install -y --no-install-recommends ca-certificates curl && \
     chmod a+rx /usr/local/bin/yt-dlp && \
     rm -rf /var/lib/apt/lists/*
 
+# Ensure Downloads directory exists and is owned by app user
+RUN mkdir -p /Downloads && chown -R app:app /Downloads
+
 USER app
 WORKDIR /app
 
