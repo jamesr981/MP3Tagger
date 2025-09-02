@@ -42,9 +42,9 @@ jobs:
       - name: Test
         run: dotnet test Mp3Tagger.sln --configuration Release --no-build --verbosity normal
 
-       - name: Build Docker image (no push)
-         uses: docker/build-push-action@v6
-         with:
-           context: .
-           file: Mp3Tagger.Web/Dockerfile
-           push: false
+      - name: Build Docker image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Mp3Tagger.Web/Dockerfile
+          push: false
