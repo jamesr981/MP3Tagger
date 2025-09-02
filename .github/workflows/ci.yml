@@ -34,13 +34,13 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore
-        run: dotnet restore Mp3Tagger.sln
+        run: dotnet restore Mp3Tagger.slnx
 
       - name: Build
-        run: dotnet build Mp3Tagger.sln --configuration Release --no-restore
+        run: dotnet build Mp3Tagger.slnx --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test Mp3Tagger.sln --configuration Release --no-build --verbosity normal
+        run: dotnet test Mp3Tagger.slnx --configuration Release --no-build --verbosity normal
 
       - name: Build Docker image (no push)
         uses: docker/build-push-action@v6
