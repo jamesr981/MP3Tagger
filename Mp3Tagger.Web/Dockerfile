@@ -43,6 +43,4 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-VOLUME $OutputPath
-
 ENTRYPOINT ["dotnet", "Mp3Tagger.Web.dll"]
