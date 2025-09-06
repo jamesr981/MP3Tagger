@@ -9,8 +9,8 @@ RUN apt-get install -y --no-install-recommends ca-certificates curl && \
     chmod a+rx /usr/local/bin/yt-dlp && \
     rm -rf /var/lib/apt/lists/*
 
-# Ensure Downloads directory exists and is owned by app user
-RUN mkdir -p /Downloads && chown -R app:app /Downloads
+ENV OutputPath="/Downloads"
+RUN mkdir -p $OutputPath && chown -R app:app $OutputPath && chmod 755 $OutputPath
 
 USER app
 WORKDIR /app
@@ -19,8 +19,6 @@ WORKDIR /app
 EXPOSE 8080
 #https
 EXPOSE 8081
-
-ENV OutputPath="/Downloads"
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
@@ -45,6 +43,6 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
-VOLUME /Downloads
+VOLUME $OutputPath
 
 ENTRYPOINT ["dotnet", "Mp3Tagger.Web.dll"]
