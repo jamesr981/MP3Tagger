@@ -143,7 +143,7 @@ Make sure the mapped host directory is writable by Docker. The application creat
 
 ## Building from source
 
-- .NET SDK 9.0 required.
+- .NET SDK 10.0 required.
 - Build: `dotnet build Mp3Tagger.sln -c Release`
 - Test: `dotnet test Mp3Tagger.sln -c Release`
 - Docker local build: `docker build -t youruser/mp3tagger:dev -f Mp3Tagger.Web/Dockerfile .`
