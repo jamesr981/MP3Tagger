@@ -2,22 +2,23 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AssemblyName>Mp3Tagger.Console</AssemblyName>
         <RootNamespace>Mp3Tagger.Console</RootNamespace>
+        <LangVersion>14</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="FFmpeg.Win64.Static" Version="4.1.1.1" />
       <PackageReference Include="ID3" Version="0.6.0" />
-      <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.8" />
-      <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.8" />
-      <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="9.0.8" />
-      <PackageReference Include="Soenneker.Libraries.ffprobe" Version="3.0.643" />
-      <PackageReference Include="YoutubeExplode" Version="6.5.4" />
-      <PackageReference Include="ytdlp-executable" Version="2025.8.11" />
+      <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.0" />
+      <PackageReference Include="Soenneker.Libraries.ffprobe" Version="4.0.732" />
+      <PackageReference Include="YoutubeExplode" Version="6.5.6" />
+      <PackageReference Include="ytdlp-executable" Version="2025.11.12" />
     </ItemGroup>
 
     <ItemGroup>
