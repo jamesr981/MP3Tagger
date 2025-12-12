@@ -69,48 +69,51 @@ jobs:
           STORED="${{ steps.stored_version.outputs.stored_version }}"
           LATEST="${{ steps.latest_ytdlp.outputs.latest_version }}"
           
+          echo "Comparing versions: stored=$STORED, latest=$LATEST"
+          
           # Function to compare semantic versions
           # Returns 0 if versions are equal, 1 if stored < latest, 2 if stored > latest
           compare_versions() {
             local v1=$1
             local v2=$2
+            local result=0
             
             # Split versions into arrays
-            IFS='.' read -ra V1 <<< "$v1"
-            IFS='.' read -ra V2 <<< "$v2"
+            IFS='.' read -ra V1 <<< "$v1" || true
+            IFS='.' read -ra V2 <<< "$v2" || true
             
             # Compare each component
-            for i in "${!V1[@]}"; do
-              if [ -z "${V2[$i]}" ]; then
-                V2[$i]=0
-              fi
+            local max_len=${#V1[@]}
+            if [ ${#V2[@]} -gt $max_len ]; then
+              max_len=${#V2[@]}
+            fi
+            
+            for ((i=0; i<max_len; i++)); do
+              local val1=${V1[$i]:-0}
+              local val2=${V2[$i]:-0}
               
-              if [ "${V1[$i]}" -lt "${V2[$i]}" ]; then
+              if [ "$val1" -lt "$val2" ] 2>/dev/null; then
                 return 1
-              elif [ "${V1[$i]}" -gt "${V2[$i]}" ]; then
+              elif [ "$val1" -gt "$val2" ] 2>/dev/null; then
                 return 2
               fi
             done
             
-            # Check if v2 has more components
-            if [ ${#V2[@]} -gt ${#V1[@]} ]; then
-              for ((i=${#V1[@]}; i<${#V2[@]}; i++)); do
-                if [ "${V2[$i]}" -gt 0 ]; then
-                  return 1
-                fi
-              done
-            fi
-            
             return 0
           }
           
+          # Call function and capture result, handling errors
+          set +e
           compare_versions "$STORED" "$LATEST"
           COMPARE_RESULT=$?
+          set -e
           
-          if [ $COMPARE_RESULT -eq 1 ]; then
+          echo "Comparison result: $COMPARE_RESULT"
+          
+          if [ "$COMPARE_RESULT" -eq 1 ]; then
             echo "New version available: $LATEST (stored: $STORED)"
             echo "is_newer=true" >> $GITHUB_OUTPUT
-          elif [ $COMPARE_RESULT -eq 0 ]; then
+          elif [ "$COMPARE_RESULT" -eq 0 ]; then
             echo "Versions are the same: $STORED"
             echo "is_newer=false" >> $GITHUB_OUTPUT
           else
