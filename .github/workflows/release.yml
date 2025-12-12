@@ -67,6 +67,8 @@ jobs:
           push: true
           # Build for common platforms; adjust if you only want linux/amd64
           platforms: linux/amd64
+          build-args: |
+            VERSION=${{ steps.vars.outputs.version }}
           tags: |
             ${{ env.DOCKERHUB_REPO }}:${{ steps.vars.outputs.version }}
             ${{ env.DOCKERHUB_REPO }}:latest

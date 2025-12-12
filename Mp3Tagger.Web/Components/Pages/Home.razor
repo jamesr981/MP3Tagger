@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using JetBrains.Annotations
 @using Mp3Tagger.Core
+@using System.Reflection
 
 @inject ILogger<Home> Logger
 @inject MusicDownloader MusicDownloader
@@ -49,12 +50,21 @@
     </div>
 </form>
 
+<div class="mt-4 pt-3 text-muted small" style="padding-top: 1.5rem;">
+    Version @Version
+</div>
+
 @code {
     [SupplyParameterFromForm]
     private Download? Model { get; set; }
     
     private IEnumerable<string>? Errors { get; set; }
     private CancellationTokenSource? _submitCts;
+
+    private string Version => Assembly.GetExecutingAssembly()
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+        ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString()
+        ?? "Unknown";
 
     protected override void OnInitialized() => Model ??= new Download();
 
