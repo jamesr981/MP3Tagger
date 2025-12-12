@@ -134,7 +134,7 @@ jobs:
           echo "Current repository version: $LATEST_TAG"
           echo "current_version=$LATEST_TAG" >> $GITHUB_OUTPUT
 
-      - name: Bump minor version
+      - name: Bump patch version
         id: bump_version
         if: steps.compare.outputs.is_newer == 'true'
         run: |
@@ -146,9 +146,9 @@ jobs:
           MINOR=${VERSION[1]:-0}
           PATCH=${VERSION[2]:-0}
           
-          # Bump minor version, reset patch
-          NEW_MINOR=$((MINOR + 1))
-          NEW_VERSION="$MAJOR.$NEW_MINOR.0"
+          # Bump patch version
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
           
           echo "Bumping version: $CURRENT -> $NEW_VERSION"
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
@@ -166,37 +166,60 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
           # Create and push tag
-          git tag -a "v$NEW_VERSION" -m "Release $NEW_VERSION (yt-dlp $YTDLP_VERSION)"
-          git push origin "v$NEW_VERSION"
+          git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION (yt-dlp $YTDLP_VERSION)"
+          git push origin "$NEW_VERSION"
           
           # Create GitHub release
-          gh release create "v$NEW_VERSION" \
+          gh release create "$NEW_VERSION" \
             --title "Release $NEW_VERSION" \
             --notes "Automated release triggered by yt-dlp update to version $YTDLP_VERSION" \
             --target master
+
+      - name: Trigger Release workflow
+        if: steps.compare.outputs.is_newer == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
+          echo "Triggering Release workflow for tag $NEW_VERSION"
+          gh api \
+            -X POST \
+            repos/${{ github.repository }}/actions/workflows/release.yml/dispatches \
+            -f ref=master \
+            -f inputs[tag]="$NEW_VERSION"
 
       - name: Update stored yt-dlp version
         if: steps.compare.outputs.is_newer == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Optional: If you want automatic variable updates, create a PAT with admin:repo scope
+          # and store it as a secret named GH_PAT. Otherwise, update YTDLP_VERSION manually.
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           NEW_YTDLP_VERSION="${{ steps.latest_ytdlp.outputs.latest_version }}"
           
-          # Update the repository variable using GitHub API
-          # Note: Updating repository variables requires admin permissions.
-          # If GITHUB_TOKEN doesn't have sufficient permissions, you may need to:
-          # 1. Use a Personal Access Token (PAT) with admin:repo scope stored as a secret
-          # 2. Or manually update the YTDLP_VERSION variable after each release
+          # Use PAT if available, otherwise use GITHUB_TOKEN
+          AUTH_TOKEN="${GH_PAT:-$GITHUB_TOKEN}"
           
+          # Try to update the repository variable
+          # Note: Updating repository variables requires admin permissions.
+          # GITHUB_TOKEN typically doesn't have this permission, so a PAT may be needed.
           if gh api \
             -X PATCH \
             repos/${{ github.repository }}/actions/variables/YTDLP_VERSION \
-            -f value="$NEW_YTDLP_VERSION" 2>/dev/null; then
+            -f value="$NEW_YTDLP_VERSION" \
+            --header "Authorization: token $AUTH_TOKEN" 2>/dev/null; then
             echo "✅ Successfully updated YTDLP_VERSION to $NEW_YTDLP_VERSION"
           else
             echo "⚠️ Warning: Could not update YTDLP_VERSION variable automatically." >&2
-            echo "Please update it manually in: Settings -> Secrets and variables -> Actions -> Variables" >&2
-            echo "Set YTDLP_VERSION to: $NEW_YTDLP_VERSION" >&2
+            echo "" >&2
+            echo "This is expected if GITHUB_TOKEN doesn't have admin permissions." >&2
+            echo "To enable automatic updates, create a Personal Access Token (PAT) with 'admin:repo' scope" >&2
+            echo "and store it as a secret named 'GH_PAT' in your repository settings." >&2
+            echo "" >&2
+            echo "Otherwise, please update it manually:" >&2
+            echo "  Settings -> Secrets and variables -> Actions -> Variables" >&2
+            echo "  Set YTDLP_VERSION to: $NEW_YTDLP_VERSION" >&2
           fi
 
       - name: Summary
