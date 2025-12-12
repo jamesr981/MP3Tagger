@@ -28,9 +28,6 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
-# Allow .nupkg files in the root ThirdParty directory
-!/ThirdParty/*.nupkg
-
 # Dotnet tools
 .dotnet-tools.json
 

@@ -43,7 +43,6 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
 COPY ["NuGet.config", "."]
-COPY ["ThirdParty/", "ThirdParty/"]
 COPY ["Mp3Tagger.Web/Mp3Tagger.Web.csproj", "Mp3Tagger.Web/"]
 COPY ["Mp3Tagger.Core/Mp3Tagger.Core.csproj", "Mp3Tagger.Core/"]
 
