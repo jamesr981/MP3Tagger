@@ -40,6 +40,7 @@ WORKDIR /app
 ############################
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
+ARG VERSION=1.0.0
 WORKDIR /src
 
 COPY ["Mp3Tagger.Web/Mp3Tagger.Web.csproj", "Mp3Tagger.Web/"]
@@ -49,7 +50,9 @@ RUN dotnet restore "Mp3Tagger.Web/Mp3Tagger.Web.csproj"
 
 COPY . .
 WORKDIR "/src/Mp3Tagger.Web"
-RUN dotnet build "Mp3Tagger.Web.csproj" -c ${BUILD_CONFIGURATION} -o /app/build --no-restore
+RUN NUMERIC_VERSION=$(echo "$VERSION" | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+).*/\1.0/' | sed -E 's/^([0-9]+\.[0-9]+)$/\1.0.0/' | sed -E 's/^([0-9]+)$/\1.0.0.0/') && \
+    dotnet build "Mp3Tagger.Web.csproj" -c ${BUILD_CONFIGURATION} -o /app/build --no-restore \
+        /p:Version=$VERSION /p:AssemblyVersion=$NUMERIC_VERSION /p:FileVersion=$NUMERIC_VERSION
 
 
 ############################
@@ -57,8 +60,11 @@ RUN dotnet build "Mp3Tagger.Web.csproj" -c ${BUILD_CONFIGURATION} -o /app/build 
 ############################
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "Mp3Tagger.Web.csproj" -c ${BUILD_CONFIGURATION} \
-    -o /app/publish /p:UseAppHost=false --no-restore
+ARG VERSION=1.0.0
+RUN NUMERIC_VERSION=$(echo "$VERSION" | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+).*/\1.0/' | sed -E 's/^([0-9]+\.[0-9]+)$/\1.0.0/' | sed -E 's/^([0-9]+)$/\1.0.0.0/') && \
+    dotnet publish "Mp3Tagger.Web.csproj" -c ${BUILD_CONFIGURATION} \
+        -o /app/publish /p:UseAppHost=false --no-restore \
+        /p:Version=$VERSION /p:AssemblyVersion=$NUMERIC_VERSION /p:FileVersion=$NUMERIC_VERSION
 
 
 ############################
