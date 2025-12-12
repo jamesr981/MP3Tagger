@@ -1,0 +1,216 @@
+name: Check yt-dlp Version and Auto-Release
+
+on:
+  schedule:
+    # Run every Sunday at 00:00 UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch: # Allow manual triggering
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  check-and-release:
+    name: Check yt-dlp version and create release if newer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install GitHub CLI
+        run: |
+          type -p curl >/dev/null || (apt update && apt install curl -y)
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+          && apt update \
+          && apt install gh -y
+
+      - name: Authenticate GitHub CLI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh auth login --with-token <<< "$GITHUB_TOKEN"
+
+      - name: Get stored yt-dlp version from repository variables
+        id: stored_version
+        run: |
+          # Get the stored version from repository variables
+          # This variable should be set in: Settings -> Secrets and variables -> Actions -> Variables
+          STORED_VERSION="${{ vars.YTDLP_VERSION }}"
+          
+          if [ -z "$STORED_VERSION" ]; then
+            echo "ERROR: Repository variable YTDLP_VERSION is not set." >&2
+            echo "Please set it in: Settings -> Secrets and variables -> Actions -> Variables" >&2
+            exit 1
+          fi
+          
+          echo "Stored yt-dlp version: $STORED_VERSION"
+          echo "stored_version=$STORED_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Get latest yt-dlp release
+        id: latest_ytdlp
+        run: |
+          # Install jq if not available
+          if ! command -v jq &> /dev/null; then
+            sudo apt-get update && sudo apt-get install -y jq
+          fi
+          
+          # Get the latest release from yt-dlp/yt-dlp
+          LATEST_RELEASE=$(curl -s https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest | jq -r '.tag_name')
+          
+          # Remove 'v' prefix if present (e.g., v2024.1.1 -> 2024.1.1)
+          LATEST_RELEASE=${LATEST_RELEASE#v}
+          
+          echo "Latest yt-dlp release: $LATEST_RELEASE"
+          echo "latest_version=$LATEST_RELEASE" >> $GITHUB_OUTPUT
+
+      - name: Compare versions
+        id: compare
+        run: |
+          STORED="${{ steps.stored_version.outputs.stored_version }}"
+          LATEST="${{ steps.latest_ytdlp.outputs.latest_version }}"
+          
+          # Function to compare semantic versions
+          # Returns 0 if versions are equal, 1 if stored < latest, 2 if stored > latest
+          compare_versions() {
+            local v1=$1
+            local v2=$2
+            
+            # Split versions into arrays
+            IFS='.' read -ra V1 <<< "$v1"
+            IFS='.' read -ra V2 <<< "$v2"
+            
+            # Compare each component
+            for i in "${!V1[@]}"; do
+              if [ -z "${V2[$i]}" ]; then
+                V2[$i]=0
+              fi
+              
+              if [ "${V1[$i]}" -lt "${V2[$i]}" ]; then
+                return 1
+              elif [ "${V1[$i]}" -gt "${V2[$i]}" ]; then
+                return 2
+              fi
+            done
+            
+            # Check if v2 has more components
+            if [ ${#V2[@]} -gt ${#V1[@]} ]; then
+              for ((i=${#V1[@]}; i<${#V2[@]}; i++)); do
+                if [ "${V2[$i]}" -gt 0 ]; then
+                  return 1
+                fi
+              done
+            fi
+            
+            return 0
+          }
+          
+          compare_versions "$STORED" "$LATEST"
+          COMPARE_RESULT=$?
+          
+          if [ $COMPARE_RESULT -eq 1 ]; then
+            echo "New version available: $LATEST (stored: $STORED)"
+            echo "is_newer=true" >> $GITHUB_OUTPUT
+          elif [ $COMPARE_RESULT -eq 0 ]; then
+            echo "Versions are the same: $STORED"
+            echo "is_newer=false" >> $GITHUB_OUTPUT
+          else
+            echo "Stored version is newer than latest (unexpected): $STORED > $LATEST"
+            echo "is_newer=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get current repository version
+        id: current_repo_version
+        if: steps.compare.outputs.is_newer == 'true'
+        run: |
+          # Get the latest tag from the repository
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+          
+          # Remove 'v' prefix if present
+          LATEST_TAG=${LATEST_TAG#v}
+          
+          echo "Current repository version: $LATEST_TAG"
+          echo "current_version=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Bump minor version
+        id: bump_version
+        if: steps.compare.outputs.is_newer == 'true'
+        run: |
+          CURRENT="${{ steps.current_repo_version.outputs.current_version }}"
+          
+          # Split version into components
+          IFS='.' read -ra VERSION <<< "$CURRENT"
+          MAJOR=${VERSION[0]:-0}
+          MINOR=${VERSION[1]:-0}
+          PATCH=${VERSION[2]:-0}
+          
+          # Bump minor version, reset patch
+          NEW_MINOR=$((MINOR + 1))
+          NEW_VERSION="$MAJOR.$NEW_MINOR.0"
+          
+          echo "Bumping version: $CURRENT -> $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create new release
+        if: steps.compare.outputs.is_newer == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
+          YTDLP_VERSION="${{ steps.latest_ytdlp.outputs.latest_version }}"
+          
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Create and push tag
+          git tag -a "v$NEW_VERSION" -m "Release $NEW_VERSION (yt-dlp $YTDLP_VERSION)"
+          git push origin "v$NEW_VERSION"
+          
+          # Create GitHub release
+          gh release create "v$NEW_VERSION" \
+            --title "Release $NEW_VERSION" \
+            --notes "Automated release triggered by yt-dlp update to version $YTDLP_VERSION" \
+            --target master
+
+      - name: Update stored yt-dlp version
+        if: steps.compare.outputs.is_newer == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW_YTDLP_VERSION="${{ steps.latest_ytdlp.outputs.latest_version }}"
+          
+          # Update the repository variable using GitHub API
+          # Note: Updating repository variables requires admin permissions.
+          # If GITHUB_TOKEN doesn't have sufficient permissions, you may need to:
+          # 1. Use a Personal Access Token (PAT) with admin:repo scope stored as a secret
+          # 2. Or manually update the YTDLP_VERSION variable after each release
+          
+          if gh api \
+            -X PATCH \
+            repos/${{ github.repository }}/actions/variables/YTDLP_VERSION \
+            -f value="$NEW_YTDLP_VERSION" 2>/dev/null; then
+            echo "✅ Successfully updated YTDLP_VERSION to $NEW_YTDLP_VERSION"
+          else
+            echo "⚠️ Warning: Could not update YTDLP_VERSION variable automatically." >&2
+            echo "Please update it manually in: Settings -> Secrets and variables -> Actions -> Variables" >&2
+            echo "Set YTDLP_VERSION to: $NEW_YTDLP_VERSION" >&2
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ steps.compare.outputs.is_newer }}" == "true" ]; then
+            echo "## ✅ New Release Created" >> $GITHUB_STEP_SUMMARY
+            echo "- New version: ${{ steps.bump_version.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
+            echo "- yt-dlp version: ${{ steps.latest_ytdlp.outputs.latest_version }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ℹ️ No Update Needed" >> $GITHUB_STEP_SUMMARY
+            echo "- Current yt-dlp version: ${{ steps.stored_version.outputs.stored_version }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Latest yt-dlp version: ${{ steps.latest_ytdlp.outputs.latest_version }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
