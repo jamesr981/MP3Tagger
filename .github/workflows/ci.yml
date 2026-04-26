@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Validate tag format (X.Y.Z)
         if: ${{ github.ref_type == 'tag' }}
@@ -30,7 +30,7 @@ jobs:
           fi
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
 
@@ -44,7 +44,7 @@ jobs:
         run: dotnet test Mp3Tagger.slnx --configuration Release --no-build --verbosity normal
 
       - name: Build Docker image (no push)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Mp3Tagger.Web/Dockerfile
