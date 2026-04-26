@@ -60,7 +60,7 @@ jobs:
           echo "version=${{ inputs.tag }}" >> $GITHUB_OUTPUT
 
       - name: Build and push
-        uses: docker/build-push-action@v67
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Mp3Tagger.Web/Dockerfile
